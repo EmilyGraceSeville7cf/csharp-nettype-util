@@ -1,0 +1,1 @@
+run="bash -e build_and_run.sh"
