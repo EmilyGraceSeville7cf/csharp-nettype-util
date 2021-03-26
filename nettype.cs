@@ -20,8 +20,8 @@ internal static class MainClass
       Environment.Exit((int)ExitStatus.Success);
     
     string assemblyName = null;
-    string[] typeList = null;
-    string[] memberList = null;
+    string[] typeNameList = null;
+    string[] memberNameList = null;
 
     int i = 0;
     while (i < args.Length)
@@ -56,7 +56,7 @@ internal static class MainClass
         case "-t":
           if (j < args.Length)
           {
-            typeList = args[j].Split(';', StringSplitOptions.RemoveEmptyEntries);
+            typeNameList = ProcessTypes(args[j]);
             i += 2;
           }
           else
@@ -69,7 +69,7 @@ internal static class MainClass
         case "-m":
           if (j < args.Length)
           {
-            memberList = args[j].Split(';', StringSplitOptions.RemoveEmptyEntries);
+            memberNameList = ProcessMembers(args[j]);
             i += 2;
           }
           else
@@ -87,11 +87,10 @@ internal static class MainClass
     
     try
     {
-      OutputMemberInfo(assemblyName, typeList, memberList);
+      OutputMemberInfo(assemblyName, typeNameList, memberNameList);
     }
-    catch (FileNotFoundException e)
+    catch (FileNotFoundException)
     {
-      Console.WriteLine(e.StackTrace);
       Console.Error.WriteLine("Specified assembly isn't found.");
       Environment.Exit((int)ExitStatus.IncorrectAssemblySpecified);
     }
@@ -117,7 +116,15 @@ Options:
 - --version|-b - outputs version and exits
 - --assembly|-a - specifies assembly name
 - --types|-t - specifies type names
+  - @all - specifies all types in assembly
+  - @class - specifies reference types in assembly
+  - @struct - specifies value types in assembly
 - --members|-m - specifies member names
+  - @all - specifies all members in types
+  - @field - specifies all fields in types
+  - @property - specifies all properties in types
+  - @constructor - specifies all constructors in types
+  - @method - specifies all methods in types
 
 Output format:
 <type-name>:<member-name>:class=<member-class>
@@ -139,51 +146,47 @@ Examples:
     Console.WriteLine("2021 (c) Alvin Seville");
   }
 
-  private static void OutputMemberInfo(string assemblyName, string[] typeList, string[] memberList)
+  private static string[] ProcessTypes(string typeNameList)
+  {
+    if (typeNameList == null)
+      throw new ArgumentNullException("type list can't be null", nameof(typeNameList));
+    
+    string[] result = typeNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
+    foreach (var item in new string[] { "@all", "@class", "@struct" })
+      result = result.Contains(item) ? new string[] { item } : result;
+    return result;
+  }
+
+  private static string[] ProcessMembers(string memberNameList)
+  {
+    if (memberNameList == null)
+      throw new ArgumentNullException("member list can't be null", nameof(memberNameList));
+    
+    string[] result = memberNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
+    foreach (var item in new string[] { "@all", "@field", "@property", "@constructor", "@method" })
+      result = result.Contains(item) ? new string[] { item } : result;
+    return result;
+  }
+
+  private static void OutputMemberInfo(string assemblyName, string[] typeNameList, string[] memberNameList)
   {
     if (assemblyName == null)
       throw new ArgumentNullException("assembly name can't be null", nameof(assemblyName));
-    if (typeList == null)
-      throw new ArgumentNullException("type list can't be null", nameof(typeList));
-    if (memberList == null)
-      throw new ArgumentNullException("member list can't be null", nameof(memberList));
+    if (typeNameList == null)
+      throw new ArgumentNullException("type list can't be null", nameof(typeNameList));
+    if (memberNameList == null)
+      throw new ArgumentNullException("member list can't be null", nameof(memberNameList));
 
     Assembly assembly = Assembly.LoadFile(assemblyName);
-    foreach (var type in assembly.DefinedTypes.Where(t => typeList.Contains(t.FullName)))
-    {
-      foreach (var member in type.DeclaredMembers.Where(m => memberList.Contains(m.Name)))
-      {
-        string memberClass = string.Empty;
-        switch (member.MemberType)
-        {
-          case MemberTypes.Field:
-            memberClass = "field";
-            break;
-          case MemberTypes.Property:
-            memberClass = "property";
-            break;
-          case MemberTypes.Method:
-            memberClass = "method";
-            break;
-          default:
-            throw new ArgumentException("Unsupported member type.", nameof(memberList));
-        }
+    TypeInfo[] typeList = FilterTypes(assembly, typeNameList);
 
-        string memberReturnType = string.Empty;
-        switch (member.MemberType)
-        {
-          case MemberTypes.Field:
-            memberReturnType = ((FieldInfo)member).FieldType.FullName;
-            break;
-          case MemberTypes.Property:
-            memberReturnType = ((PropertyInfo)member).PropertyType.FullName;
-            break;
-          case MemberTypes.Method:
-            memberReturnType = ((MethodInfo)member).ReturnType.FullName;
-            break;
-          default:
-            throw new ArgumentException("Unsupported member type.", nameof(memberList));
-        }
+    foreach (var type in typeList)
+    {
+      foreach (var member in FilterMembers(type, memberNameList))
+      {
+        string memberClass = ToMemberClass(member);
+        string memberReturnType = GetReturnType(member);
+
 
         Console.WriteLine($"{type}:{member.Name}:class={memberClass}");
         Console.WriteLine($"{type}:{member.Name}:return-type={memberReturnType}");
@@ -193,8 +196,125 @@ Examples:
           case MemberTypes.Method:
             Console.WriteLine($"{type}:{member.Name}:arguments={string.Join(';', ((MethodInfo)member).GetParameters().Select(p => $"{p.Name},{p.ParameterType.FullName}"))}");
             break;
+          case MemberTypes.Constructor:
+            Console.WriteLine($"{type}:{member.Name}:arguments={string.Join(';', ((ConstructorInfo)member).GetParameters().Select(p => $"{p.Name},{p.ParameterType.FullName}"))}");
+            break;
         }
       }
     }
+  }
+
+  private static TypeInfo[] FilterTypes(Assembly assembly, string[] typeNameList)
+  {
+    if (assembly == null)
+      throw new ArgumentNullException("assembly can't be null", nameof(assembly));
+    if (typeNameList == null)
+      throw new ArgumentNullException("type list can't be null", nameof(typeNameList));
+
+    TypeInfo[] typeList = assembly.DefinedTypes.ToArray();
+
+    if (typeNameList.Length == 1)
+    {
+      switch (typeNameList[0])
+      {
+        case "@class":
+          typeList = typeList.Where(t => !t.IsValueType).ToArray();
+          break;
+        case "@struct":
+          typeList = typeList.Where(t => t.IsValueType).ToArray();
+          break;
+      }
+    }
+    else
+      typeList = typeList.Where(t => typeNameList.Contains(t.FullName)).ToArray();
+
+    return typeList;
+  }
+
+  private static MemberInfo[] FilterMembers(TypeInfo type, string[] memberNameList)
+  {
+    if (type == null)
+      throw new ArgumentNullException("type can't be null", nameof(type));
+    if (memberNameList == null)
+      throw new ArgumentNullException("type list can't be null", nameof(memberNameList));
+
+    MemberInfo[] memberList = type.DeclaredMembers.ToArray();
+
+    if (memberNameList.Length == 1)
+    {
+      switch (memberNameList[0])
+      {
+        case "@field":
+          memberList = memberList.Where(m => m.MemberType == MemberTypes.Field).ToArray();
+          break;
+        case "@property":
+          memberList = memberList.Where(m => m.MemberType == MemberTypes.Property).ToArray();
+          break;
+        case "@constructor":
+          memberList = memberList.Where(m => m.MemberType == MemberTypes.Constructor).ToArray();
+          break;
+        case "@method":
+          memberList = memberList.Where(m => m.MemberType == MemberTypes.Method).ToArray();
+          break;
+      }
+    }
+    else
+      memberList = memberList.Where(m => memberNameList.Contains(m.Name)).ToArray();
+
+    return memberList;
+  }
+
+  private static string ToMemberClass(MemberInfo type)
+  {
+    if (type == null)
+      throw new ArgumentNullException("type can't be null", nameof(type));
+    
+    string memberClass = string.Empty;
+    switch (type.MemberType)
+    {
+      case MemberTypes.Field:
+        memberClass = "field";
+        break;
+      case MemberTypes.Property:
+        memberClass = "property";
+        break;
+      case MemberTypes.Constructor:
+        memberClass = "constructor";
+        break;
+      case MemberTypes.Method:
+        memberClass = "method";
+        break;
+      default:
+        throw new ArgumentException("Unsupported member type.", nameof(type));
+    }
+
+    return memberClass;
+  }
+
+  private static string GetReturnType(MemberInfo type)
+  {
+    if (type == null)
+      throw new ArgumentNullException("type can't be null", nameof(type));
+    
+    string memberReturnType = string.Empty;
+    switch (type.MemberType)
+    {
+      case MemberTypes.Field:
+        memberReturnType = ((FieldInfo)type).FieldType.FullName;
+        break;
+      case MemberTypes.Property:
+        memberReturnType = ((PropertyInfo)type).PropertyType.FullName;
+        break;
+      case MemberTypes.Constructor:
+        memberReturnType = ((ConstructorInfo)type).DeclaringType.FullName;
+        break;
+      case MemberTypes.Method:
+        memberReturnType = ((MethodInfo)type).ReturnType.FullName;
+        break;
+      default:
+        throw new ArgumentException("Unsupported member type.", nameof(type));
+    }
+
+    return memberReturnType;
   }
 }

@@ -1,6 +1,6 @@
 namespace First
 {
-  public static class A
+  public class A
   {
     public static int x;
 
@@ -8,9 +8,13 @@ namespace First
     {
       return 0;
     }
+
+    public A(float n, string m)
+    {
+    }
   }
 
-  public static class B
+  public struct B
   {
     public static float x { get; }
 
