@@ -2,9 +2,36 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace NETType
 {
+    internal class TypeInfoComparerByFullName : IEqualityComparer<TypeInfo>
+    {
+        public bool Equals(TypeInfo x, TypeInfo y)
+        {
+            return x.FullName == y.FullName;
+        }
+
+        public int GetHashCode(TypeInfo obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
+    internal class MemberInfoComparerByName : IEqualityComparer<MemberInfo>
+    {
+        public bool Equals(MemberInfo x, MemberInfo y)
+        {
+            return x.Name == y.Name;
+        }
+
+        public int GetHashCode(MemberInfo obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
     internal static class MainClass
     {
         private enum ExitStatus : byte
@@ -14,6 +41,30 @@ namespace NETType
             UnknownOption,
             IncorrectAssemblySpecified,
             IncorrectTypeSpecified
+        }
+
+        private static class Types
+        {
+            public const string All = "@all";
+            public const string Class = "@class";
+            public const string Struct = "@struct";
+
+            public const string StaticClass = "@@class";
+        }
+
+        private static class Members
+        {
+            public const string All = "@all";
+            public const string Field = "@field";
+            public const string Property = "@property";
+            public const string Constructor = "@constructor";
+            public const string Method = "@method";
+
+            public const string StaticAll = "@@all";
+            public const string StaticField = "@@field";
+            public const string StaticProperty = "@@property";
+            public const string StaticConstructor = "@@constructor";
+            public const string StaticMethod = "@@method";
         }
 
         private static void Main(string[] args)
@@ -121,12 +172,18 @@ Options:
   - @all - specifies all types in assembly
   - @class - specifies reference types in assembly
   - @struct - specifies value types in assembly
+  - @@class - specifies static reference types in assembly
 - --members|-m - specifies member names
   - @all - specifies all members in types
   - @field - specifies all fields in types
   - @property - specifies all properties in types
   - @constructor - specifies all constructors in types
   - @method - specifies all methods in types
+  - @@all - specifies all static members in types
+  - @@field - specifies all static fields in types
+  - @@property - specifies all static properties in types
+  - @@constructor - specifies static all constructors in types
+  - @@method - specifies static all methods in types
 
 Output format:
 <type-name>:<member-name>:class=<member-class>
@@ -140,7 +197,8 @@ Output format:
 
 Examples:
 - nettype --help
-- nettype --assembly My.dll --types SomeNamespace.A;SomeNamespace.B --members SampleMethod");
+- nettype --assembly My.dll --types 'SomeNamespace.A;SomeNamespace.B' --members 'SampleMethod'
+- nettype --assembly My.dll --types '@class' --members '@field|@property'");
         }
 
         private static void Version()
@@ -153,10 +211,7 @@ Examples:
             if (typeNameList == null)
                 throw new ArgumentNullException(nameof(typeNameList), "type list can't be null");
 
-            string[] result = typeNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var item in new string[] { "@all", "@class", "@struct" })
-                result = result.Contains(item) ? new string[] { item } : result;
-            return result;
+            return typeNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
         }
 
         private static string[] ProcessMembers(string memberNameList)
@@ -164,10 +219,7 @@ Examples:
             if (memberNameList == null)
                 throw new ArgumentNullException(nameof(memberNameList), "member list can't be null");
 
-            string[] result = memberNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var item in new string[] { "@all", "@field", "@property", "@constructor", "@method" })
-                result = result.Contains(item) ? new string[] { item } : result;
-            return result;
+            return memberNameList.Split(';', StringSplitOptions.RemoveEmptyEntries);
         }
 
         private static void OutputMemberInfo(string assemblyName, string[] typeNameList, string[] memberNameList)
@@ -212,24 +264,37 @@ Examples:
             if (typeNameList == null)
                 throw new ArgumentNullException(nameof(typeNameList), "type list can't be null");
 
-            TypeInfo[] typeList = assembly.DefinedTypes.ToArray();
+            HashSet<TypeInfo> typeList = new HashSet<TypeInfo>();
 
-            if (typeNameList.Length == 1)
+            foreach (var type in typeNameList)
             {
-                switch (typeNameList[0])
+                switch (type)
                 {
-                    case "@class":
-                        typeList = typeList.Where(t => !t.IsValueType).ToArray();
+                    case Types.All:
+                        foreach (var item in assembly.DefinedTypes)
+                            typeList.Add(item);
                         break;
-                    case "@struct":
-                        typeList = typeList.Where(t => t.IsValueType).ToArray();
+                    case Types.Class:
+                        foreach (var item in assembly.DefinedTypes.Where(t => t.IsClass))
+                            typeList.Add(item);
+                        break;
+                    case Types.Struct:
+                        foreach (var item in assembly.DefinedTypes.Where(t => t.IsValueType))
+                            typeList.Add(item);
+                        break;
+                    case Types.StaticClass:
+                        foreach (var item in assembly.DefinedTypes.Where(t => t.IsClass && t.IsAbstract && t.IsSealed))
+                            typeList.Add(item);
+                        break;
+                    default:
+                        TypeInfo result = assembly.GetType(type)?.GetTypeInfo();
+                        if (result != null)
+                            typeList.Add(result);
                         break;
                 }
             }
-            else
-                typeList = typeList.Where(t => typeNameList.Contains(t.FullName)).ToArray();
 
-            return typeList;
+            return typeList.Distinct(new TypeInfoComparerByFullName()).ToArray();
         }
 
         private static MemberInfo[] FilterMembers(TypeInfo type, string[] memberNameList)
@@ -239,30 +304,76 @@ Examples:
             if (memberNameList == null)
                 throw new ArgumentNullException(nameof(memberNameList), "type list can't be null");
 
-            MemberInfo[] memberList = type.DeclaredMembers.ToArray();
+            HashSet<MemberInfo> memberList = new HashSet<MemberInfo>();
 
-            if (memberNameList.Length == 1)
+            foreach (var member in memberNameList)
             {
-                switch (memberNameList[0])
+                switch (member)
                 {
-                    case "@field":
-                        memberList = memberList.Where(m => m.MemberType == MemberTypes.Field).ToArray();
+                    case Members.All:
+                        foreach (var item in type.DeclaredMembers)
+                            memberList.Add(item);
                         break;
-                    case "@property":
-                        memberList = memberList.Where(m => m.MemberType == MemberTypes.Property).ToArray();
+                    case Members.Field:
+                        foreach (var item in type.DeclaredFields)
+                            memberList.Add(item);
                         break;
-                    case "@constructor":
-                        memberList = memberList.Where(m => m.MemberType == MemberTypes.Constructor).ToArray();
+                    case Members.Property:
+                        foreach (var item in type.DeclaredProperties)
+                            memberList.Add(item);
                         break;
-                    case "@method":
-                        memberList = memberList.Where(m => m.MemberType == MemberTypes.Method).ToArray();
+                    case Members.Constructor:
+                        foreach (var item in type.DeclaredConstructors)
+                            memberList.Add(item);
+                        break;
+                    case Members.Method:
+                        foreach (var item in type.DeclaredMethods)
+                            memberList.Add(item);
+                        break;
+                    case Members.StaticAll:
+                        foreach (var item in type.DeclaredMembers.Where(m => {
+                            switch (m.MemberType)
+                            {
+                                case MemberTypes.Field:
+                                    return ((ConstructorInfo)m).IsStatic;
+                                case MemberTypes.Property:
+                                    PropertyInfo property = (PropertyInfo)m;
+                                    return property.GetMethod == null ? property.SetMethod.IsStatic : property.GetMethod.IsStatic;
+                                case MemberTypes.Constructor:
+                                    return ((ConstructorInfo)m).IsStatic;
+                                case MemberTypes.Method:
+                                    return ((MethodInfo)m).IsStatic;
+                                default:
+                                    throw new ArgumentException(nameof(memberNameList), "Unsupported member type.");
+                            }
+                            }))
+                            memberList.Add(item);
+                        break;
+                    case Members.StaticField:
+                        foreach (var item in type.DeclaredFields.Where(m => m.IsStatic))
+                            memberList.Add(item);
+                        break;
+                    case Members.StaticProperty:
+                        foreach (var item in type.DeclaredProperties.Where(m => m.GetMethod == null ? m.SetMethod.IsStatic : m.GetMethod.IsStatic))
+                            memberList.Add(item);
+                        break;
+                    case Members.StaticConstructor:
+                        foreach (var item in type.DeclaredConstructors.Where(m => m.IsStatic))
+                            memberList.Add(item);
+                        break;
+                    case Members.StaticMethod:
+                        foreach (var item in type.DeclaredMethods.Where(m => m.IsStatic))
+                            memberList.Add(item);
+                        break;
+                    default:
+                        MemberInfo result = type.GetMember(member, BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).FirstOrDefault();
+                        if (result != null)
+                            memberList.Add(result);
                         break;
                 }
             }
-            else
-                memberList = memberList.Where(m => memberNameList.Contains(m.Name)).ToArray();
 
-            return memberList;
+            return memberList.Distinct(new MemberInfoComparerByName()).ToArray();
         }
 
         private static string ToMemberClass(MemberInfo type)

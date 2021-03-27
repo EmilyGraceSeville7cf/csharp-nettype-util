@@ -1,1 +1,1 @@
-run="bash -e build_and_run.sh"
+run="chmod +x ./run.sh && ./run.sh"
