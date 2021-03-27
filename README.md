@@ -45,3 +45,5 @@ Output format:
 - `nettype --help` - outputs help and exits
 - `nettype --assembly My.dll --types 'SomeNamespace.A;SomeNamespace.B' --members 'SampleMethod'` - prints all SomeNamespace.A SomeNamespace.B type members in My.dll
 - `nettype --assembly My.dll --types '@class' --members '@field|@property'` - prints all fields and properties in all classes in My.dll
+
+[![Try on repl.it](https://repl-badge.jajoosam.repl.co/try.png)](https://repl.it/@AlvinSeville7cf/CSharp-Exercise-Other-Terminal-reflection-client?ref=button)
