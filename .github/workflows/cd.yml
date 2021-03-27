@@ -1,0 +1,30 @@
+name: CD
+
+on:
+  push:
+    tags: 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Mono Build and Archive
+        run: |
+          mcs -target:exe -out:nettype.exe nettype.cs
+          tar -cf release.tar nettype.exe
+
+      - name: Set RELEASE_VERSION environment variable
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Publish Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ env.RELEASE_VERSION }}"
+          prerelease: false
+          title: "${{ env.RELEASE_VERSION }} Build"
+          files: |
+            release.tar
