@@ -17,4 +17,4 @@ jobs:
 
       - name: Mono Build
         run: |
-          mcs -target:exe -out:main.exe main.cs
+          mcs -target:exe -out:nettype.exe nettype.cs
