@@ -29,6 +29,7 @@ nettype - program to extract .NET type info from assemblies
   - `@@method` - specifies static all methods in types
 
 Output format:
+
 ```
 <type-name>:<member-name>:class=<member-class>
 <type-name>:<member-name>:return-type=<member-return-type>
@@ -46,4 +47,4 @@ Output format:
 - `nettype --assembly My.dll --types 'SomeNamespace.A;SomeNamespace.B' --members 'SampleMethod'` - prints all SomeNamespace.A SomeNamespace.B type members in My.dll
 - `nettype --assembly My.dll --types '@class' --members '@field|@property'` - prints all fields and properties in all classes in My.dll
 
-[![Try on repl.it](https://repl-badge.jajoosam.repl.co/try.png)](https://repl.it/@AlvinSeville7cf/CSharp-Exercise-Other-Terminal-reflection-client?ref=button)
+[`try on repl.it`](https://replit.com/@AlvinSeville7cf/CSharp-Exercise-Other-Terminal-reflection-client)
