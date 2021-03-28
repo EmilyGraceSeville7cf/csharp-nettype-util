@@ -15,7 +15,7 @@ jobs:
 
       - name: Mono Build
         run: |
-          ./build.sh
+          chmod +x ./build.sh && ./build.sh
 
       - name: Markdown Check
         if: ${{ always() }}
