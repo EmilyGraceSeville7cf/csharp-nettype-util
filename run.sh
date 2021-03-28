@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
 
-nettype="nettype"
-
-mcs "-out:$nettype.exe" "$nettype.cs"
+mcs -out:nettype.exe nettype.cs TypeInfoComparerByFullName.cs MemberInfoComparerByName.cs AssemblyTypeFilter.cs AssemblyMemberFilter.cs MemberFormatter.cs
 mono nettype.exe --version
