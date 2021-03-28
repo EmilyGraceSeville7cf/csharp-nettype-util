@@ -17,30 +17,6 @@ namespace NETType
             IncorrectTypeSpecified
         }
 
-        private static class Types
-        {
-            public const string All = "@all";
-            public const string Class = "@class";
-            public const string Struct = "@struct";
-
-            public const string StaticClass = "@@class";
-        }
-
-        private static class Members
-        {
-            public const string All = "@all";
-            public const string Field = "@field";
-            public const string Property = "@property";
-            public const string Constructor = "@constructor";
-            public const string Method = "@method";
-
-            public const string StaticAll = "@@all";
-            public const string StaticField = "@@field";
-            public const string StaticProperty = "@@property";
-            public const string StaticConstructor = "@@constructor";
-            public const string StaticMethod = "@@method";
-        }
-
         private static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -50,8 +26,7 @@ namespace NETType
             string typeFilter = string.Empty;
             string memberFilter = string.Empty;
 
-            int i = 0;
-            while (i < args.Length)
+            for (int i = 0; i < args.Length; i++)
             {
                 int j = i + 1;
                 switch (args[i])
@@ -71,7 +46,7 @@ namespace NETType
                         if (j < args.Length)
                         {
                             assemblyName = args[j];
-                            i += 2;
+                            i++;
                         }
                         else
                         {
@@ -84,7 +59,7 @@ namespace NETType
                         if (j < args.Length)
                         {
                             typeFilter = args[j];
-                            i += 2;
+                            i++;
                         }
                         else
                         {
@@ -97,7 +72,7 @@ namespace NETType
                         if (j < args.Length)
                         {
                             memberFilter = args[j];
-                            i += 2;
+                            i++;
                         }
                         else
                         {
