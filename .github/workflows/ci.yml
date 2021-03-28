@@ -15,7 +15,7 @@ jobs:
 
       - name: Mono Build
         run: |
-          mcs -target:exe -out:nettype.exe nettype.cs
+          ./build.sh
 
       - name: Markdown Check
         if: ${{ always() }}

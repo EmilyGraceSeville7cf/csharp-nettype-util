@@ -13,7 +13,7 @@ jobs:
 
       - name: Mono Build and Archive
         run: |
-          mcs -target:exe -out:nettype.exe nettype.cs
+          ./build.sh
           tar -cf release.tar nettype.exe
 
       - name: Set RELEASE_VERSION environment variable
