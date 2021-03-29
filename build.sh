@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-mcs -out:nettype.exe *.cs
+shopt -s extglob
+mcs -out:nettype.exe !(*sample).cs

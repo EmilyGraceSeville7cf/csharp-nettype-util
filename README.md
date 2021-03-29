@@ -47,4 +47,10 @@ Output format:
 - `nettype --assembly My.dll --types 'SomeNamespace.A|SomeNamespace.B' --members 'SampleMethod'` - prints all SomeNamespace.A SomeNamespace.B type members in My.dll
 - `nettype --assembly My.dll --types '@class' --members '@field|@property'` - prints all fields and properties in all classes in My.dll
 
+## Implementation details
+
+- `run.sh` - Bash script to compile and run project (uses `build.sh`)
+- `build.sh` - Bash script to compile project (is used by `run.sh` and GitHub actions)
+- `repl.it` - Repl.it config to compile and run project (uses `run.sh`)
+
 [`try on repl.it`](https://replit.com/@AlvinSeville7cf/CSharp-Exercise-Other-Terminal-reflection-client)
