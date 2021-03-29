@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ linter-setup ]
   pull_request:
-    branches: [ master ]
+    branches: [ linter-setup ]
 
 jobs:
   build:
@@ -17,12 +17,6 @@ jobs:
         run: |
           chmod +x ./build.sh && ./build.sh
 
-      - name: Markdown Check
-        if: ${{ always() }}
+      - name: Linter Check
         run: |
-          sudo gem install mdl
-
-          for file in *.md
-          do
-            mdl "$file"
-          done
+          chmod +x ./analyze.sh && ./analyze.sh

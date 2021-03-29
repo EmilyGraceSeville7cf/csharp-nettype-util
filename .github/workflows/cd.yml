@@ -14,9 +14,16 @@ jobs:
       - name: Mono Build and Archive
         run: |
           chmod +x ./build.sh && ./build.sh
+
+      - name: Linter Check
+        run: |
+          chmod +x ./analyze.sh && ./analyze.sh
+
+      - name: Archiving
+        run: |
           tar -cf release.tar nettype.exe
 
-      - name: Set RELEASE_VERSION environment variable
+      - name: Environment Variable Setup
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Publish Release
