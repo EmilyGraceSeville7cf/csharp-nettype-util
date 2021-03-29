@@ -89,10 +89,10 @@ namespace NETType
 
             try
             {
-                AssemblyTypeFilter assemblyTypeFilter = new AssemblyTypeFilter(Assembly.LoadFile(assemblyName));
+                IFilter<IEnumerable<TypeInfo>> assemblyTypeFilter = new AssemblyTypeFilter(Assembly.LoadFile(assemblyName));
                 IEnumerable<TypeInfo> types = assemblyTypeFilter.Filter(typeFilter);
                 
-                AssemblyMemberFilter assemblyMemberFilter = new AssemblyMemberFilter(types);
+                IFilter<IDictionary<TypeInfo, IEnumerable<MemberInfo>>> assemblyMemberFilter = new AssemblyMemberFilter(types);
                 IDictionary<TypeInfo, IEnumerable<MemberInfo>> members = assemblyMemberFilter.Filter(memberFilter);
                 
                 MemberFormatter formatter = new MemberFormatter(members);

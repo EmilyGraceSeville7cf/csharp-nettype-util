@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace NETType
 {
-    public class AssemblyMemberFilter
+    public class AssemblyMemberFilter : IFilter<IDictionary<TypeInfo, IEnumerable<MemberInfo>>>
     {
         public IEnumerable<TypeInfo> Types
         {
