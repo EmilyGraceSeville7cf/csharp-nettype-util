@@ -5,19 +5,36 @@ on:
     tags: 'v*'
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Mono Build and Archive
+      - name: Mono Build
         run: |
           chmod +x ./build.sh && ./build.sh
 
       - name: Linter Check
         run: |
           chmod +x ./analyze.sh && ./analyze.sh
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: nettype
+          path: nettype.exe
+
+  publish:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: nettype
 
       - name: Archiving
         run: |
