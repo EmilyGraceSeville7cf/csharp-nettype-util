@@ -5,19 +5,45 @@ on:
     tags: 'v*'
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-20.04
     if: github.event.base_ref == 'refs/heads/master'
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Mono Build and Archive
+      - name: Mono Build
         run: |
           chmod +x ./build.sh && ./build.sh
+
+      - name: Linter Check
+        run: |
+          chmod +x ./analyze.sh && ./analyze.sh
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: nettype
+          path: nettype.exe
+          retention-days: 1
+
+  publish:
+    runs-on: ubuntu-20.04
+    needs: check
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: nettype
+
+      - name: Archiving
+        run: |
           tar -cf release.tar nettype.exe
 
-      - name: Set RELEASE_VERSION environment variable
+      - name: Environment Variable Setup
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Publish Release
