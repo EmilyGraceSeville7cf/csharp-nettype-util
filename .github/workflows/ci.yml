@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ linter-setup ]
+    branches: [ master ]
   pull_request:
-    branches: [ linter-setup ]
+    branches: [ master ]
 
 jobs:
   check:
