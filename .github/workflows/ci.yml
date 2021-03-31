@@ -20,9 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Mono Install
+        run: |
+          chmod +x ./build_init.sh && ./build_init.sh
+
       - name: Mono Build
         run: |
           chmod +x ./build.sh && ./build.sh
+
+      - name: Linter Install
+        run: |
+          chmod +x ./analyze_init.sh && ./analyze_init.sh
 
       - name: Linter Check
         run: |
