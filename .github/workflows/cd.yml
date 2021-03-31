@@ -7,7 +7,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-20.04
-    if: github.event.base_ref == 'refs/heads/master'
+    if: github.event.base_ref == 'refs/heads/multiplatform-ci'
 
     steps:
       - uses: actions/checkout@v2

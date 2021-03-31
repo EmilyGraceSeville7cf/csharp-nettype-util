@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ multiplatform-ci ]
   pull_request:
-    branches: [ master ]
+    branches: [ multiplatform-ci ]
 
 jobs:
   check:
