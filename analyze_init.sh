@@ -7,7 +7,7 @@ function installMdLinter()
     return
   fi
 
-  sudo npm install -g markdownlint-cli
+  npm install -g markdownlint-cli
 }
 
 function installShLinter()
