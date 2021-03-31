@@ -2,11 +2,21 @@
 
 function installMdLinter()
 {
+  if markdownlint --version &> /dev/null
+  then
+    return
+  fi
+
   sudo npm install -g markdownlint-cli
 }
 
 function installShLinter()
 {
+  if shellcheck --version &> /dev/null
+  then
+    return
+  fi
+
   case "$OSTYPE" in
     linux-gnu*)
       sudo apt-get install shellcheck
