@@ -34,4 +34,17 @@ jobs:
 
       - name: Linter Check
         run: |
+          if [[ "$OSTYPE" == "msys" ]]
+          then
+            temp="temp.txt"
+
+            for file in *.sh
+            do
+              cat "$file" | tr -d '\r' > "$temp"
+              cat "$temp" > "$file"
+            done
+
+            rm "$temp"
+          fi
+
           chmod +x ./analyze.sh && ./analyze.sh
