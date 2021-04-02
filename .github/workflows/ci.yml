@@ -28,9 +28,7 @@ jobs:
           chmod +x ./build.sh && ./build.sh
       - name: Linter Install
         run: |
-          sudo chown -R $USER ~/.npm
-          sudo chown -R $USER /usr/lib/node_modules
-          sudo chown -R $USER /usr/local/lib/node_modules
+          sudo chown -R $(whoami) /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share
           chmod +x ./analyze_init.sh && ./analyze_init.sh
       - name: Linter Check
         run: |
