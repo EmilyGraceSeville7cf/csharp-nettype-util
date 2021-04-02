@@ -23,28 +23,23 @@ jobs:
       - name: Mono Install
         run: |
           chmod +x ./build_init.sh && ./build_init.sh
-
       - name: Mono Build
         run: |
           chmod +x ./build.sh && ./build.sh
-
       - name: Linter Install
         run: |
+          sudo chown -R $USER /usr/local/lib/node_modules
           chmod +x ./analyze_init.sh && ./analyze_init.sh
-
       - name: Linter Check
         run: |
           if [[ "$OSTYPE" == "msys" ]]
           then
             temp="temp.txt"
-
             for file in *.sh
             do
               cat "$file" | tr -d '\r' > "$temp"
               cat "$temp" > "$file"
             done
-
             rm "$temp"
           fi
-
           chmod +x ./analyze.sh && ./analyze.sh
