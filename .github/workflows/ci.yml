@@ -6,12 +6,10 @@ on:
   pull_request:
     branches: [ multiplatform-ci ]
 
-defaults:
-  run:
-    shell: bash
+  workflow_dispatch:
 
 jobs:
-  check:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -20,26 +18,60 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Mono Install
-        run: |
-          chmod +x ./build_init.sh && ./build_init.sh
       - name: Mono Build
         run: |
-          chmod +x ./build.sh && ./build.sh
-      - name: Linter Install
+          function installCsCompiler()
+          {
+            if mono --version &> /dev/null
+            then
+              return
+            fi
+            
+            case "$OSTYPE" in
+              darwin*)
+                brew install mono
+                ;;
+              msys)
+                choco install mono -y
+                ;;
+            esac
+          }
+
+          installCsCompiler
+
+          chmod +x build.sh && ./build.sh
+        
+      - name: Upload Artifacts
+        if: $matrix.os == 'ubuntu-20.04'
+        uses: actions/upload-artifact@v2
+        with:
+          name: program
+          path: main.exe
+          retention-days: 1
+  
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Markdown Check
         run: |
           sudo chown -R $(whoami) /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share
-          chmod +x ./analyze_init.sh && ./analyze_init.sh
-      - name: Linter Check
+          npm install -g markdownlint-cli
+          markdownlint *.md
+      - name: Shell Check
+        if: always()
         run: |
-          if [[ "$OSTYPE" == "msys" ]]
-          then
-            temp="temp.txt"
-            for file in *.sh
-            do
-              cat "$file" | tr -d '\r' > "$temp"
-              cat "$temp" > "$file"
-            done
-            rm "$temp"
-          fi
-          chmod +x ./analyze.sh && ./analyze.sh
+          sudo apt-get install shellcheck
+          shellcheck *.sh
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: program
+      - name: CSharp Check
+        if: always()
+        run: |
+          sudo apt update
+          sudo apt-get install gendarme
+          gendarme -- *.exe
