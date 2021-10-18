@@ -6,7 +6,7 @@
 
 > ⚠️ This project is no longer maintained.
 
-nettype - program to extract .NET type info from assemblies
+Tool to inspect .NET assemblies.
 
 ## Options
 
