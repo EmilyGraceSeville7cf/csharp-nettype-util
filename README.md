@@ -4,6 +4,8 @@
 
 ## Description
 
+> ⚠️ This project is no longer maintained.
+
 nettype - program to extract .NET type info from assemblies
 
 ## Options
