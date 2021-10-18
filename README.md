@@ -52,5 +52,3 @@ Output format:
 - `run.sh` - Bash script to compile and run project (uses `build.sh`)
 - `build.sh` - Bash script to compile project (is used by `run.sh` and GitHub actions)
 - `repl.it` - Repl.it config to compile and run project (uses `run.sh`)
-
-[`try on repl.it`](https://replit.com/@AlvinSeville7cf/CSharp-Exercise-Other-Terminal-reflection-client)
